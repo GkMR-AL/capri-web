@@ -132,38 +132,80 @@ footer {
   </section>
   <footer>CAPRI WEB // VERSÃO EXPERIMENTAL</footer>
 </main>
+
 <script>
 const form = document.getElementById("form");
 const input = document.getElementById("message");
 const chat = document.getElementById("chat");
 
+const API_URL =
+  "https://capri-api-c22.murilorodriguescarneiro22.workers.dev";
+
 function addMessage(name, text, type) {
   const box = document.createElement("div");
   box.className = "message " + type;
+
   const label = document.createElement("div");
   label.className = "name";
   label.textContent = name;
+
   const content = document.createElement("div");
   content.textContent = text;
+
   box.append(label, content);
   chat.appendChild(box);
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  return content;
 }
 
-form.addEventListener("submit", function(event) {
+form.addEventListener("submit", async function(event) {
   event.preventDefault();
+
   const text = input.value.trim();
   if (!text) return;
 
   addMessage("VOCÊ", text, "user");
   input.value = "";
 
-  addMessage(
-    "CAPRI // MODO DEMONSTRAÇÃO",
-    "Mensagem recebida. Minha conexão com a IA ainda não foi configurada. Por enquanto, estou apenas testando a interface.",
+  const replyBox = addMessage(
+    "CAPRI // IA",
+    "Processando sua mensagem...",
     "capri"
   );
+
+  const button = form.querySelector("button");
+  button.disabled = true;
+  input.disabled = true;
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erro ao consultar a IA.");
+    }
+
+    replyBox.textContent = data.reply || "A IA retornou uma resposta vazia.";
+
+  } catch (error) {
+    console.error(error);
+    replyBox.textContent =
+      "Não consegui me conectar à IA. Confira a configuração do Worker e tente novamente.";
+  } finally {
+    button.disabled = false;
+    input.disabled = false;
+    input.focus();
+  }
 });
 </script>
+
 </body>
 </html>
